@@ -2,11 +2,196 @@
 ###
 ### netboot.xyz-custom menu
 ###
+set menu-timeout 50000
+set submenu-timeout ${menu-timeout}
+
+isset ${menu-default} || set menu-default exit
+
 
 :start
-echo Hello world!
-sleep 10
-goto custom_exit
+menu . , _-* ^ M-a-i-N ^ * - _ , .
+item
+item --gap -- 
+#item undi_dos    undi_dos
+item disk_util Disk Utilities
+item winpe Live Systemes
+item linux Linux Distros
+item webboot
+item --gap -- ------------------------- LOCAL ---------------------------------
+item pe pe3 via sanboot
+item hire hirens via http using memdisk
+item strel strelec sanboot strelec
+:pe3
+sanboot --no-describe ${boot-url}/iso/pe3_x86_E.iso || imgfree || kernel /memdisk raw || initrd /iso/pe3_x86_E.iso || imgstat || boot || shell
+#
+:hire
+kernel /memdisk
+initrd ${boot-url}/iso/hirens.iso
+imgstat
+boot
+#
+:strel
+sanboot --no-describe ${boot-url}/iso/strel.iso || shell
+item --gap -- ------------------------- iPXE ------------------------------
+item config     Configure settings
+item shell      Enter iPXE shell
+item reboot     Reboot
+item exit       Exit (boot local disk) #???according to bios settings???
+#
+choose --default exit --timeout 30000 target && goto ${target}
 
-:custom_exit
-exit 0
+########## UTILITY ITEMS ####################
+:shell
+echo Type exit to get the back to the menu
+shell
+set menu-timeout 0
+goto start
+:failed
+echo Booting failed, dropping to shell
+goto shell
+:reboot
+reboot
+:exit
+exit
+:cancel
+echo You cancelled the menu, dropping you to a shell
+:config
+config
+goto start
+:back
+set submenu-timeout 0
+clear submenu-default
+goto start
+
+################################ disk utilities
+:disk_util
+menu Disk Utilities
+item partlogic    Boot partlogic (memdisk)
+item pmagic    Boot pmagic (memdisk)
+item clonezilla    Boot clonezilla via HTTP
+item partition_wizard Boot Partition Wizard (memdisk)
+item back Back to top menu...
+iseq ${menu-default} menu-recovery && isset ${submenu-default} && goto menu-recovery-timed ||
+choose selected && goto ${selected} || goto start
+:menu-recovery-timed
+choose --timeout ${submenu-timeout} --default ${submenu-default} selected && goto ${selected} || goto start
+
+:partlogic
+initrd ${boot-url}/images/partlogic-0.71.img
+kernel ${boot-url}/memdisk || goto failed
+boot || goto failed
+goto start
+
+:pmagic
+#sanboot ${boot-url}/iso/pmagic_2013_02_28.iso || goto failed #halts on "probing EDD"
+#dhcp net0 #if chainloaded
+initrd ${boot-url}/iso/pmagic_2013_02_28.iso
+kernel ${boot-url}/memdisk iso || goto failed
+boot || goto failed
+goto start
+
+:partition_wizard
+initrd ${boot-url}/iso/pwhe8.iso
+kernel ${boot-url}/memdisk iso || goto failed
+boot || goto failed
+goto start
+
+kernel ${boot-url}/iso/clonezilla/live/vmlinuz boot=live config noswap nolocales edd=on nomodeset vga=788 nosplash noprompt fetch=${boot-url}/iso/clonezilla/live/filesystem.squashfs
+initrd ${boot-url}/iso/clonezilla/live/initrd.img
+boot || goto failed
+goto start
+
+
+################################# winpe
+:winpe
+menu Boot WinPe
+item 7pex86 sanboot 7pe_x86.iso
+item 7pe sanboot 7pe
+item pe3_amd64_M.iso_mem load into Ram and boot using memdisk
+item pe3_amd64_M.iso_SAN
+item vhd_xp sanboot xp.vhd
+item vhd_w7memdisk boot w7.vhd via memdisk
+item vhd_w7 sanboot w7.vhd
+item memdisk_winpe    Boot winpe via memdisk
+item sanboot_winpe    Boot winpe via sanboot 
+item wimboot    Boot winpe via wimboot
+item winpe3    wimboot winpe3 autodetect arch
+item winpe3x86    wimboot winpe3 arch is set to x86
+item ubuntu-live    ubuntu-live (nfs)
+item back Back to top menu...
+iseq ${menu-default} menu-recovery && isset ${submenu-default} && goto menu-recovery-timed ||
+choose selected && goto ${selected} || goto start
+:menu-recovery-timed
+choose --timeout ${submenu-timeout} --default ${submenu-default} selected && goto ${selected} || goto start
+
+:vhd_xp
+set boot-url http://${dhcp-server}
+sanboot --no-describe ${boot-url}/xp.img || goto failed
+goto start  
+
+vhd_w7memdisk
+set boot-url http://${dhcp-server}
+initrd ${boot-url}/w7.vhd
+kernel ${boot-url}/memdisk raw || boot
+goto failed
+
+:vhd_w7
+set boot-url http://${dhcp-server}
+sanboot --no-describe ${boot-url}/w7.vhd || goto failed
+goto start
+
+:wimboot
+  kernel ${boot-url}/wimboot
+  initrd ${boot-url}/BOOTMGR          BOOTMGR
+  initrd ${boot-url}/BOOT/BCD         BCD
+  initrd ${boot-url}/BOOT/BOOT.SDI    BOOT.SDI
+  initrd ${boot-url}/SOURCES/BOOT.WIM BOOT.WIM
+  boot || goto failed
+  goto start
+  
+:memdisk_winpe3_x86_E.iso
+initrd ${boot-url}/iso/pe3_x86_E_.iso
+chain ${boot-url}/memdisk iso raw || goto failed #loads but halts after windows logo
+goto start    
+  
+:sanboot_winpe
+sanboot --no-describe ${boot-url}/iso/winrec732.iso || goto failed
+goto start  
+  
+:winpe3
+  cpuid --ext 29 && set arch amd64 || set arch x86
+  kernel ${boot-url}/wimboot
+  initrd ${boot-url}/${arch}/ISO/bootmgr       bootmgr
+  initrd ${boot-url}/${arch}/ISO/boot/bcd      BCD
+  initrd ${boot-url}/${arch}/ISO/boot/boot.sdi boot.sdi
+  initrd ${boot-url}/${arch}/winpe.wim         boot.wim
+  boot || goto failed
+goto start  
+
+:winpe3x86
+  set arch x86
+  kernel ${boot-url}/wimboot
+  initrd ${boot-url}/${arch}/ISO/bootmgr       bootmgr
+  initrd ${boot-url}/${arch}/ISO/boot/bcd      BCD
+  initrd ${boot-url}/${arch}/ISO/boot/boot.sdi boot.sdi
+  initrd ${boot-url}/${arch}/winpe.wim         boot.wim
+  boot || goto failed
+goto start  
+################################ disk utilities
+:webboot
+menu webboot
+item xyz fallback to htpps://boot.netboot.xyz
+:xyz
+chain --autofree https://boot.netboot.xyz
+item slitweb boot slitaz from the web (all Vers. plus additional Tools)
+:slitweb
+set next-server mirror.slitaz.org
+chain /gpxe.pxe || shell
+#
+#
+iseq ${menu-default} menu-recovery && isset ${submenu-default} && goto menu-recovery-timed ||
+choose selected && goto ${selected} || goto start
+:menu-recovery-timed
+choose --timeout ${submenu-timeout} --default ${submenu-default} selected && goto ${selected} || goto start
+#
+any comments and Advice is very Welcome
