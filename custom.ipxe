@@ -3,13 +3,13 @@
 ### netboot.xyz-custom menu
 ###
 set boot-url http://192.168.1.3
-set nfs-root nfs://${dhcp-server}/images/
-set 210:string http://192.168.1.3/
+set nfs-root nfs://192.168.1.3/images/
+#set 210:string http://192.168.1.3/
 #set next-server 192.168.1.3
 set github_user netbootdau
 #
 :start
-Menu local Boot from ${boot-url}
+Menu local Boot from ${boot-url} / rolfmenu.ipxe
 item hiren HirensBootCD 15 light (memdisk)
 item pe3 pe3_x86_E.iso (sanboot)
 item 8pese 8peSE.iso (memdisk)
@@ -20,11 +20,15 @@ item strel10 StrelecPE v10 (sanboot)
 
 
 :hiren
-chain ${boot-url}/hiren.ipxe || shell
+chain ${boot-url}/hiren.ipxe ||
+kernel ${boot-url}/memdisk raw ||
+initrd ${boot-url}/iso/hirens.iso ||
+imgstat 
+boot || shell
 :pe3
 chain ${boot-url}/pe3.ipxe || shell
 :8pese
-kernel ${boot-url}/memdisk iso raw
+kernel ${boot-url}/memdisk iso
 initrd ${boot-url}/iso/8pese.iso
 imgstat
 boot || shell
