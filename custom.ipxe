@@ -2,7 +2,7 @@
 ###
 ### netboot.xyz-custom menu
 ###
-set boot-url http://192.168.1.3
+set b http://192.168.1.3
 set github_user netbootdau
 
 :start
@@ -19,8 +19,8 @@ goto ${custom_choice}
 goto custom_exit
 
 :option_one
-kernel http://192.168.1.3/slax/boot/vmlinuz
-initrd http://192.168.1.3/slax/boot/initrfs.img
+kernel ${b}/slax/boot/vmlinuz
+initrd ${b}/slax/boot/initrfs.img
 imgargs vmlinuz rw from=slax slax.flags=pxe,perch,xmode 
 boot || goto start
 
