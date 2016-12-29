@@ -3,6 +3,7 @@
 ### netboot.xyz-custom menu
 ###
 set b http://192.168.1.3
+set 210:string http://192.168.1.3/
 set github_user netbootdau
 
 :start
@@ -12,7 +13,8 @@ item option_one ${space} Loading a kernel and initrd
 item option_two ${space} Loading an ISO
 item --gap This is a second sub menu
 item option_three ${space} Loads another custom sub menu
-item option_four ${space} This is option four
+item option_four ${space} 8pese.iso
+item option_five ${space} 7pese.iso
 choose custom_choice || goto custom_exit
 echo ${cls}
 goto ${custom_choice}
@@ -34,9 +36,16 @@ goto custom_exit
 echo Chains into another menu...
 chain https://raw.githubusercontent.com/${github_user}/netboot.xyz-custom/master/custom1.ipxe || goto custom
 
+:option_four
+kernel ${b}/memdisk iso raw
+intrd ${b}/8pese.iso
+
+:option_five
+kernel ${b}/memdisk iso raw
+intrd ${b}/7pese.iso
+
 :custom_exit
 exit 0
-
 
 
 
