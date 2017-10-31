@@ -1,0 +1,82 @@
+#!ipxe
+###
+### netboot.xyz-custom menu
+###
+set b http://192.168.1.7
+set 210:string http://192.168.1.7/
+set github_user netbootdau
+
+:start
+menu This is the Github XYZ Custom_2 Menu
+item --gap
+item option_one ${space} BukerPXE boot pe3_x86_E.iso (memdisk)
+item option_two ${space} BuukerPXE w7.vhd to memdisk
+item --gap This is a second sub menu
+item option_three ${space} Loads rolf.ipxe (custom sub menu on Github)
+item option_four ${space} BuukerPXE slax.iso
+item option_five ${space} BuukerPXE 7pese.iso
+choose custom_choice || goto custom_exit
+echo ${cls}
+goto ${custom_choice}
+goto custom_exit
+
+:option_one
+kernel http://boot.netboot.xyz/memdisk raw
+initrd http://192.168.1.7/pe3_x86_E.iso
+boot || goto start
+
+:option_two
+kernel http://boot.netboot.xyz/memdisk raw
+initrd http://192.168.1.7/w7.vhd
+boot || goto custom_exit
+goto custom_exit
+
+:option_three
+echo Chains into another menu...
+chain https://raw.githubusercontent.com/${github_user}/netboot.xyz-custom/master/rolf.ipxe || goto custom
+
+:option_four
+kernel http://boot.netboot.xyz/memdisk raw iso raw
+intrd http://192.168.1.7/8pese.iso
+boot || goto start
+
+
+:option_five
+kernel http://192.168.1.7/memdisk iso raw
+intrd http://192.168.1.7/7pese.iso
+
+:custom_exit
+exit 0
+
+
+
+#set nfs-root nfs://${dhcp-server}/images/
+#set 210:string http://192.168.1.3/
+#set next-server 192.168.1.3
+# Menu local Boot from ${boot-url}
+# item hiren HirensBootCD 15 light (memdisk)
+# item pe3 pe3_x86_E.iso (sanboot)
+# item 8pese 8peSE.iso (memdisk)
+# item 8pe boot 8pe.iso (memdisk)
+# item strel4 StrelecPE v4-7 via http using memdisk
+# item strel8 StrelecPE v8 (sanboot)
+# item strel10 StrelecPE v10 (sanboot)
+
+
+# :hiren
+# chain ${boot-url}/hiren.ipxe || shell
+# :pe3
+# chain ${boot-url}/pe3.ipxe || shell
+# :8pese
+# kernel ${boot-url}/memdisk iso raw
+# initrd ${boot-url}/iso/8pese.iso
+# imgstat
+# boot || shell
+# :8pe
+# chain ${boot-url}/8pe.ipxe || shell
+# :strel4
+# chain  ${boot-url}/strel4.ipxe || shell
+# :strel8
+# chain  ${boot-url}/strel8.ipxe || shell
+# :strel10
+# chain  ${boot-url}/strel10.ipxe || shell
